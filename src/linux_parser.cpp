@@ -1,7 +1,7 @@
-#include <dirent.h>
 #include <unistd.h>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include "linux_parser.h"
 #include "system.h"
@@ -10,24 +10,21 @@ using std::stof;
 using std::string;
 using std::to_string;
 using std::vector;
+namespace fs = std::filesystem;
 
-// BONUS: Update this to use std::filesystem
+// Read process IDs from the filesystem
 vector<int> LinuxParser::Pids() {
   vector<int> pids;
-  DIR* directory = opendir(kProcDirectory.c_str());
-  struct dirent* file;
-  while ((file = readdir(directory)) != nullptr) {
-    // Is this a directory?
-    if (file->d_type == DT_DIR) {
-      // Is every character of the name a digit?
-      string filename(file->d_name);
+  fs::path p(kProcDirectory);
+  for (const auto& entry : fs::directory_iterator(p)) {
+    string filename = entry.path().filename().string();
+    if (entry.is_directory()) {
       if (std::all_of(filename.begin(), filename.end(), isdigit)) {
         int pid = stoi(filename);
         pids.push_back(pid);
       }
     }
   }
-  closedir(directory);
   return pids;
 }
 
